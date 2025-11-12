@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LFJC Online Exam</title>
+<style>
+/* === DESIGN KEPT EXACTLY AS REQUESTED === */
+body{font-family:"SF Pro Display",Arial,sans-serif;margin:0;background:#fff;color:#000;}
+header{background:linear-gradient(145deg,#E6E6FA,#D8BFD8);color:#4B0082;text-align:center;padding:20px;font-size:36px;font-weight:700;letter-spacing:1.5px;box-shadow:0 5px #aaa;text-shadow:0 1px 2px #fff;}
+#studentEntry,#examArea{padding:20px;text-align:center;}
+.form-group{display:flex;flex-direction:row;align-items:center;justify-content:center;margin-bottom:15px;}
+.form-group label{font-size:1.15rem;font-weight:600;margin-right:10px;color:#4B0082;width:120px;text-align:right;}
+input[type="text"]{padding:10px 12px;font-size:1.1rem;border-radius:10px;border:1.5px solid #4B0082;outline:none;min-width:250px;}
+input.error{animation:glowRed 0.5s alternate infinite;border-color:red;}
+@keyframes glowRed{0%{box-shadow:0 0 5px red;}100%{box-shadow:0 0 15px red;}}
+button{position:relative;overflow:hidden;cursor:pointer;border:none;border-radius:12px;transition:all .18s ease;box-shadow:0 6px #aaa;background:linear-gradient(to bottom,#fafaff,#dcd6f7);color:#4B0082;font-weight:600;padding:10px 20px;font-size:18px;}
+button:hover{transform:translateY(-2px);box-shadow:0 8px 15px rgba(0,0,0,.28);}
+button:active{transform:translateY(3px) scale(.98);}
+.optBtn{font-size:16px;padding:8px 18px;margin:6px;border:2px solid #4B0082;background:#fff;border-radius:8px;box-shadow:0 5px #aaa;}
+.optBtn.selected{background:#32CD32;color:#fff;border-color:#2fa92f;}
+.navContainer{display:flex;justify-content:center;gap:10px;margin:10px 0;flex-wrap:wrap}
+.navBtn{font-size:16px;padding:10px 20px;border-radius:8px;color:#fff;font-weight:bold;cursor:pointer;background:linear-gradient(145deg,#1E90FF,#4682B4);}
+#markReviewBtn{background:linear-gradient(145deg,#ffb84d,#ff9900)}
+#submitBtn{background:linear-gradient(145deg,#c8b88a,#b49e60)}
+#timerEl{font-size:20px;font-weight:bold;color:#4B0082;padding:6px 12px;border-radius:6px;background:#f0f0ff;display:inline-block;transition: all 0.3s ease;}
+#timerEl.blink{animation:blinkTimer 1s infinite;}
+@keyframes blinkTimer{0%{background:#ff6666;color:#fff;}50%{background:#fff;color:#4B0082;}100%{background:#ff6666;color:#fff;}}
+#paletteContainer button{width:36px;height:36px;border-radius:50%;font-size:14px;margin:3px;border:1px solid #4B0082;background:#E6E6FA;color:#4B0082;}
+#paletteContainer button.selected{background:#32CD32;color:#fff;border-color:#2fa92f}
+#paletteContainer button.reviewed{background:yellow;color:#000}
+#paletteContainer button.current{border:3px solid red}
+footer{background:#E6E6FA;color:#4B0082;padding:10px;text-align:center;font-weight:bold;position:fixed;width:100%;bottom:0;}
+.sectionTitle{font-size:22px;color:#4B0082;font-weight:bold;margin-bottom:8px;}
+img.questionImg{max-width:100%;border-radius:10px;}
+/* glowing confirm/call-admin buttons (uses existing palette) */
+.glow {
+  animation: glowPulse 1.6s infinite alternate;
+  box-shadow:0 8px 18px rgba(75,0,130,0.12);
+}
+@keyframes glowPulse {
+  0% { box-shadow:0 6px 10px rgba(75,0,130,0.06); transform:translateY(0); }
+  50% { box-shadow:0 12px 30px rgba(75,0,130,0.14); transform:translateY(-2px); }
+  100% { box-shadow:0 6px 10px rgba(75,0,130,0.06); transform:translateY(0); }
+}
+
+/* FULL-PAGE RED OVERLAY and slices */
+#fullRedOverlay{ position:fixed; left:0; top:0; width:100%; height:100%; display:none; z-index:9999; pointer-events:auto; }
+#fullRedOverlay .overlay-slice{ position:absolute; top:0; bottom:0; width:calc(100%/7); height:100%; background:red; left:0; transition:opacity .45s ease, transform .45s ease; }
+#accessDeniedBox{ position:fixed; left:50%; top:40%; transform:translate(-50%,-50%); z-index:10000; color:#fff; text-align:center; display:none; pointer-events:auto; }
+#accessDeniedBox h1{ font-size:48px; font-weight:900; margin:0 0 18px 0; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,0.4); }
+#callAdminBtn{ padding:12px 22px; border-radius:12px; font-weight:800; }
+#callAdminBtn.glow { /* keep glow same style */ }
+
+/* small responsive tweak */
+@media(max-width:600px){ #accessDeniedBox h1{font-size:28px;} #callAdminBtn{padding:10px 14px;} .form-group{flex-direction:column;align-items:flex-start;} .form-group label{text-align:left;width:auto;margin-bottom:5px;} }
+</style>
+</head>
+<body>
+<header>LFJC ONLINE EXAMINATION</header>
+
+<div id="studentEntry">
+  <div class="form-group"><label>Name</label><input type="text" id="stuName" placeholder="Only letters & spaces" autocomplete="off" autocapitalize="words"></div>
+  <div class="form-group"><label>Section</label><input type="text" id="stuSection" placeholder="Letters & digits" autocomplete="off"></div>
+  <div class="form-group"><label>Roll</label><input type="text" id="stuRoll" placeholder="Digits only" autocomplete="off"></div>
+  <div class="form-group"><label>Admission No</label><input type="text" id="stuAdm" placeholder="Digits only" autocomplete="off"></div>
+  <div class="form-group"><button id="stuStartBtn" style="display:none;">Start Exam</button></div>
+  <p id="studentMsg"></p>
+</div>
+
+<div id="examArea" style="display:none;">
+  <div id="examHeader" style="display:flex;justify-content:space-between;align-items:center;">
+    <div id="stuInfo" style="text-align:left;font-weight:bold;"></div>
+    <div id="stuQInfo" style="text-align:center;"></div>
+    <div id="timerEl">🕒 00:00</div>
+  </div>
+
+  <div id="questionContainer" style="text-align:center;margin-top:10px;"></div>
+
+  <div class="navContainer">
+    <button class="navBtn" id="prevBtn">⬅ Previous</button>
+    <button class="navBtn" id="markReviewBtn">Review</button>
+    <button class="navBtn" id="nextBtn">Next ➡</button>
+    <button class="navBtn" id="submitBtn">Submit Exam</button>
+  </div>
+
+  <div id="paletteContainer"></div>
+</div>
+
+<footer>LFJC@2025 All rights reserved</footer>
+
+<!-- ACCESS DENIED / CALL ADMIN overlay elements -->
+<div id="fullRedOverlay" aria-hidden="true"></div>
+<div id="accessDeniedBox" aria-hidden="true">
+  <h1 id="accessDeniedText">ACCESS DENIED</h1>
+  <div>
+    <button id="callAdminBtn" class="glow">CALL ADMIN</button>
+  </div>
+</div>
+
+<script>
+// ====== CONFIG & MARKS ======
+const MARK_PER_CORRECT = 1;      
+const MARK_PER_WRONG = -0.25;    
+let images = ["1.png","2.png","3.png","4.png","5.png","6.png"]; 
+let answerKey = ["A","B","C","D","A","B"]; 
+const subjects = ["Maths","Physics","Chemistry"];
+let examData = { files: [], subjectNames: [], keys: [] };
+
+// ====== helpers ======
+function shuffleArray(arr){
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+const LS_KEY = 'lfjc_attempts_v1';
+function makeStudentIdRaw(name,sec,roll,adm){ return `${name.trim().toLowerCase()}|${sec.trim().toLowerCase()}|${roll.trim()}|${adm.trim()}`; }
+function storeAttemptLocal(student){
+  try{
+    const raw = makeStudentIdRaw(student.name, student.sec, student.roll, student.adm);
+    const attempts = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    attempts.push({ raw, t: Date.now() });
+    localStorage.setItem(LS_KEY, JSON.stringify(attempts));
+  }catch(e){}
+}
+function isBlockedByPrevious(name,sec,roll,adm){
+  try{
+    const attempts = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    const cutoff = Date.now() - (24*60*60*1000);
+    for (let a of attempts){
+      if (a.t < cutoff) continue;
+      const parts = (a.raw||'').split('|');
+      if (parts.length < 4) continue;
+      const [sn, ss, sr, sa] = parts;
+      let matches = 0;
+      if (sn && name.toLowerCase().trim() === sn) matches++;
+      if (ss && sec.toLowerCase().trim() === ss) matches++;
+      if (sr && roll.trim() === sr) matches++;
+      if (sa && adm.trim() === sa) matches++;
+      if (matches >= 2) return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+// ====== PREPARE EXAM ======
+function prepareExamData(){
+  examData.files = []; examData.subjectNames = []; examData.keys = [];
+  const total = images.length;
+  const base = Math.floor(total / 3);
+  let remainder = total % 3;
+  let start = 0;
+  const groups = [];
+  for (let s = 0; s < 3; s++){
+    const count = base + (remainder > 0 ? 1 : 0);
+    remainder--;
+    const groupImgs = images.slice(start, start + count);
+    const groupKeys = answerKey.slice(start, start + count);
+    start += count;
+    const idxs = Array.from({length: groupImgs.length}, (_,i)=>i);
+    const shuffledIdxs = shuffleArray(idxs);
+    const shuffledImgs = shuffledIdxs.map(i => groupImgs[i]);
+    const shuffledKeys = shuffledIdxs.map(i => groupKeys[i]);
+    groups.push({ name: subjects[s], imgs: shuffledImgs, keys: shuffledKeys });
+  }
+  const shuffledGroups = shuffleArray(groups);
+  shuffledGroups.forEach(g=>{
+    g.imgs.forEach((img, i)=>{
+      examData.files.push(img);
+      examData.keys.push(g.keys[i]);
+      examData.subjectNames.push(g.name);
+    });
+  });
+}
+
+// ====== CORE LOGIC ======
+let progress = null, timerInterval = null, pendingAttempt = null;
+function validateStudentInputs(){
+  const name = document.getElementById('stuName');
+  const sec = document.getElementById('stuSection');
+  const roll = document.getElementById('stuRoll');
+  const adm = document.getElementById('stuAdm');
+  let validName = /^[A-Za-z .]+$/.test(name.value);
+  let validSec = /^[A-Za-z0-9]+$/.test(sec.value);
+  let validRoll = /^[0-9]+$/.test(roll.value);
+  let validAdm = /^[0-9]+$/.test(adm.value);
+  name.classList.toggle('error', !validName && name.value !== "");
+  sec.classList.toggle('error', !validSec && sec.value !== "");
+  roll.classList.toggle('error', !validRoll && roll.value !== "");
+  adm.classList.toggle('error', !validAdm && adm.value !== "");
+  const allValid = validName && validSec && validRoll && validAdm;
+  const startBtn = document.getElementById('stuStartBtn');
+  startBtn.style.display = allValid ? 'inline-block' : 'none';
+  if(allValid) startBtn.classList.add('glow'); else startBtn.classList.remove('glow');
+  return allValid;
+}
+['stuName','stuSection','stuRoll','stuAdm'].forEach(id=>document.getElementById(id).addEventListener('input',validateStudentInputs));
+
+// ===== START EXAM ======
+document.getElementById('stuStartBtn').onclick = () => {
+  if (!validateStudentInputs()) return;
+  const name = document.getElementById('stuName').value.trim();
+  const sec = document.getElementById('stuSection').value.trim();
+  const roll = document.getElementById('stuRoll').value.trim();
+  const adm = document.getElementById('stuAdm').value.trim();
+  pendingAttempt = { name, sec, roll, adm };
+  if (isBlockedByPrevious(name,sec,roll,adm)){
+    document.getElementById('stuName').value = '';
+    document.getElementById('stuSection').value = '';
+    document.getElementById('stuRoll').value = '';
+    document.getElementById('stuAdm').value = '';
+    document.getElementById('stuStartBtn').style.display = 'none';
+    document.getElementById('stuStartBtn').classList.remove('glow');
+    showRedOverlay();
+    return;
+  }
+  if(!confirm("Are you sure you want to START the exam? Once started, timer will begin.")){ pendingAttempt=null; return; }
+  document.getElementById('stuName').value = '';
+  document.getElementById('stuSection').value = '';
+  document.getElementById('stuRoll').value = '';
+  document.getElementById('stuAdm').value = '';
+  document.getElementById('stuStartBtn').style.display = 'none';
+  document.getElementById('stuStartBtn').classList.remove('glow');
+  prepareExamData();
+  progress = {
+    answers: Array(examData.files.length).fill(null),
+    review: Array(examData.files.length).fill(false),
+    currentIndex:0,
+    student:{ name, sec, roll, adm, date:new Date().toLocaleDateString() },
+    timeLeftSec:5*60
+  };
+  document.getElementById('studentEntry').style.display='none';
+  document.getElementById('examArea').style.display='block';
+  renderQuestion(); renderPalette(); startTimer();
+};
+
+// ===== RENDER QUESTION & EXAM INFO ======
+function renderQuestion(){
+  const idx=progress.currentIndex;
+  const container=document.getElementById('questionContainer');
+  container.innerHTML=`<div class="sectionTitle">${examData.subjectNames[idx]}</div>
+                       <img src="${examData.files[idx]}" class="questionImg">`;
+  ["A","B","C","D"].forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.textContent=opt;
+    btn.className='optBtn'+(progress.answers[idx]===opt?' selected':'');
+    btn.onclick=()=>{
+      progress.answers[idx]=opt; renderQuestion(); renderPalette();
+    };
+    container.appendChild(btn);
+  });
+  // EXAM INFO (no labels, only entered data)
+  document.getElementById('stuInfo').textContent=`${progress.student.name} | ${progress.student.sec} | ${progress.student.roll} | ${progress.student.adm}`;
+  document.getElementById('stuQInfo').textContent=`Q ${idx+1}/${examData.files.length}`;
+  document.getElementById('markReviewBtn').textContent=progress.review[idx]?'Unmark Review':'Mark Review';
+}
+
+// ===== PALETTE ======
+function renderPalette(){
+  const cont=document.getElementById('paletteContainer');
+  cont.innerHTML='';
+  progress.answers.forEach((ans,i)=>{
+    const b=document.createElement('button'); b.textContent=i+1;
+    if(i===progress.currentIndex) b.classList.add('current');
+    if(progress.review[i]) b.classList.add('reviewed');
+    if(ans) b.classList.add('selected');
+    b.onclick=()=>{ progress.currentIndex=i; renderQuestion(); renderPalette(); };
+    cont.appendChild(b);
+  });
+}
+
+// ===== NAV BUTTONS ======
+document.getElementById('prevBtn').onclick=()=>{ if(progress.currentIndex>0){ progress.currentIndex--; renderQuestion(); renderPalette(); } };
+document.getElementById('nextBtn').onclick=()=>{ if(progress.currentIndex<examData.files.length-1){ progress.currentIndex++; renderQuestion(); renderPalette(); } };
+document.getElementById('markReviewBtn').onclick=()=>{
+  progress.review[progress.currentIndex]=!progress.review[progress.currentIndex]; renderQuestion(); renderPalette();
+};
+document.getElementById('submitBtn').onclick=()=>{ if(confirm("Submit Exam?")) submitExam(); };
+
+// ===== TIMER ======
+function startTimer(){
+  const el=document.getElementById('timerEl');
+  timerInterval=setInterval(()=>{
+    progress.timeLeftSec--;
+    let m=Math.floor(progress.timeLeftSec/60); let s=progress.timeLeftSec%60;
+    el.textContent=`🕒 ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if(progress.timeLeftSec<=10) el.classList.add('blink');
+    if(progress.timeLeftSec<=0){ clearInterval(timerInterval); submitExam(); }
+  },1000);
+}
+
+// ===== SUBMIT EXAM ======
+function submitExam(){
+  clearInterval(timerInterval);
+  storeAttemptLocal(progress.student);
+  showResult();
+}
+
+// ===== RESULT PAGE ======
+function showResult(){
+  const body=document.body;
+  body.innerHTML='<header>RESULT PAGE</header>';
+  const table=document.createElement('table');
+  table.style.width='80%';
+  table.style.margin='20px auto';
+  table.style.borderCollapse='collapse';
+  table.innerHTML=`<thead>
+  <tr style="background:#4B0082;color:#fff;font-size:18px;"><th>Subject</th><th>Correct</th><th>Wrong</th><th>Blank</th><th>Total</th><th>Score</th><th>%</th></tr>
+  </thead><tbody></tbody>`;
+  const tbody=table.querySelector('tbody');
+  const subjectMap={}; 
+  examData.subjectNames.forEach((sub,i)=>{
+    if(!subjectMap[sub]) subjectMap[sub]=[]; subjectMap[sub].push(i);
+  });
+  let totalCorrect=0,totalWrong=0,totalBlank=0,totalScore=0,totalQ=0;
+  for(const sub in subjectMap){
+    let correct=0,wrong=0,blank=0;
+    subjectMap[sub].forEach(i=>{
+      const ans=progress.answers[i];
+      if(!ans) blank++;
+      else if(ans===examData.keys[i]) correct++;
+      else wrong++;
+    });
+    const score = correct*MARK_PER_CORRECT + wrong*MARK_PER_WRONG;
+    const total = correct+wrong+blank;
+    const perc = ((score/(total*MARK_PER_CORRECT))*100).toFixed(2);
+    totalCorrect+=correct; totalWrong+=wrong; totalBlank+=blank; totalScore+=score; totalQ+=total;
+    const tr=document.createElement('tr');
+    tr.style.background='#f0f0ff';
+    tr.innerHTML=`<td>${sub}</td><td>${correct}</td><td>${wrong}</td><td>${blank}</td><td>${total}</td><td>${score}</td><td>${perc}%</td>`;
+    tbody.appendChild(tr);
+  }
+  const trTotal=document.createElement('tr');
+  trTotal.style.background='#32CD32'; trTotal.style.color='#fff'; trTotal.style.fontWeight='bold';
+  trTotal.innerHTML=`<td>Total</td><td>${totalCorrect}</td><td>${totalWrong}</td><td>${totalBlank}</td><td>${totalQ}</td><td>${totalScore}</td><td>${((totalScore/(totalQ*MARK_PER_CORRECT))*100).toFixed(2)}%</td>`;
+  tbody.appendChild(trTotal);
+  body.appendChild(table);
+
+  const logoutBtn=document.createElement('button');
+  logoutBtn.textContent='Logout';
+  logoutBtn.style.display='block';
+  logoutBtn.style.margin='20px auto';
+  logoutBtn.onclick=()=>{ window.open('','_self').close(); };
+  body.appendChild(logoutBtn);
+}
+
+// ===== ACCESS DENIED ====
+function showRedOverlay(){
+  const overlay=document.getElementById('fullRedOverlay');
+  overlay.innerHTML='';
+  for(let i=0;i<7;i++){
+    const div=document.createElement('div'); div.className='overlay-slice';
+    div.style.left=`${i*100/7}%`; overlay.appendChild(div);
+  }
+  overlay.style.display='block';
+  document.getElementById('accessDeniedBox').style.display='block';
+  document.getElementById('callAdminBtn').onclick=()=>{ alert("Please contact administrator!"); };
+}
+</script>
+</body>
+</html>
